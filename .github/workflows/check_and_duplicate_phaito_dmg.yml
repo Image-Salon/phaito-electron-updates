@@ -33,12 +33,12 @@ jobs:
         run: |
           release_id=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.id')
           assets_url=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.assets_url')
-          assets=$(curl -s "${assets_url}")
+          assets=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "${assets_url}")
 
           if ! echo "${assets}" | jq -e '.[] | select(.name == "Phaito.dmg")'; then
-            file_to_duplicate=$(echo "${assets}" | jq -r '.[] | select(.name | test("^Phaito_.*\\.dmg$")) | .url')
+            file_to_duplicate=$(echo "${assets}" | jq -r '.[] | select(.name | test("^Phaito_.*\\.dmg$")) | .browser_download_url')
             if [ -n "${file_to_duplicate}" ]; then
-              upload_url=$(echo "${assets}" | jq -r '.upload_url' | sed 's/{.*}//')
+              upload_url=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.upload_url' | sed 's/{.*}//')
               file_name="Phaito.dmg"
               curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                   -H "Content-Type: application/octet-stream" \
