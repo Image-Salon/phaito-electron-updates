@@ -6,7 +6,7 @@ on:
 
   schedule:
     - cron: "0 0 * * *"
-  
+
   workflow_dispatch:
 
 jobs:
@@ -31,8 +31,8 @@ jobs:
 
       - name: Check and duplicate Phaito.dmg
         run: |
-          release_id=$(echo "${{ steps.get_release.outputs.data }}" | jq -r '.id')
-          assets_url=$(echo "${{ steps.get_release.outputs.data }}" | jq -r '.assets_url')
+          release_id=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.id')
+          assets_url=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.assets_url')
           assets=$(curl -s "${assets_url}")
 
           if ! echo "${assets}" | jq -e '.[] | select(.name == "Phaito.dmg")'; then
@@ -41,9 +41,9 @@ jobs:
               upload_url=$(echo "${assets}" | jq -r '.upload_url' | sed 's/{.*}//')
               file_name="Phaito.dmg"
               curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                   -H "Content-Type: application/octet-stream" \
-                   --data-binary @"${file_to_duplicate}" \
-                   "${upload_url}?name=${file_name}&label=${file_name}"
+                  -H "Content-Type: application/octet-stream" \
+                  --data-binary @"${file_to_duplicate}" \
+                  "${upload_url}?name=${file_name}&label=${file_name}"
             fi
           fi
         env:
