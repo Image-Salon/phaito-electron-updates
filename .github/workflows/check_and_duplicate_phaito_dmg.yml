@@ -19,9 +19,15 @@ jobs:
 
       - name: Get latest release
         id: get_release
-        uses: octokit/request-action@v2
+        uses: octokit/request-action@v2.x
         with:
-          route: GET /repos/${{ github.repository }}/releases/latest
+          #route: GET /repos/${{ github.repository }}/releases/latest
+          route: GET /repos/{owner}/{repo}/releases/latest
+          owner: Image-Salon
+          repo: phaito-electron-updates
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check and duplicate Phaito.dmg
         run: |
