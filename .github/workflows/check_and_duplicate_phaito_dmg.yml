@@ -1,0 +1,42 @@
+name: Check and Duplicate Phaito.dmg
+
+on:
+  release:
+    types: [published]
+
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  check-and-duplicate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Get latest release
+        id: get_release
+        uses: octokit/request-action@v2
+        with:
+          route: GET /repos/${{ github.repository }}/releases/latest
+
+      - name: Check and duplicate Phaito.dmg
+        run: |
+          release_id=$(echo "${{ steps.get_release.outputs.data }}" | jq -r '.id')
+          assets_url=$(echo "${{ steps.get_release.outputs.data }}" | jq -r '.assets_url')
+          assets=$(curl -s "${assets_url}")
+
+          if ! echo "${assets}" | jq -e '.[] | select(.name == "Phaito.dmg")'; then
+            file_to_duplicate=$(echo "${assets}" | jq -r '.[] | select(.name | test("^Phaito_.*\\.dmg$")) | .url')
+            if [ -n "${file_to_duplicate}" ]; then
+              upload_url=$(echo "${assets}" | jq -r '.upload_url' | sed 's/{.*}//')
+              file_name="Phaito.dmg"
+              curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                   -H "Content-Type: application/octet-stream" \
+                   --data-binary @"${file_to_duplicate}" \
+                   "${upload_url}?name=${file_name}&label=${file_name}"
+            fi
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

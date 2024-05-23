@@ -1,2 +1,1 @@
-# phaito-electron-updates
-Updates for the Phaito app
+# Updates for the Phaito app
