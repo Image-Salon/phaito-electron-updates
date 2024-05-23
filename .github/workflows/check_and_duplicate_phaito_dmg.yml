@@ -38,12 +38,15 @@ jobs:
           if ! echo "${assets}" | jq -e '.[] | select(.name == "Phaito.dmg")'; then
             file_to_duplicate=$(echo "${assets}" | jq -r '.[] | select(.name | test("^Phaito_.*\\.dmg$")) | .browser_download_url')
             if [ -n "${file_to_duplicate}" ]; then
+              # Download the file
+              curl -L -o Phaito.dmg "${file_to_duplicate}"
+              
+              # Upload the file
               upload_url=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.upload_url' | sed 's/{.*}//')
-              file_name="Phaito.dmg"
               curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                   -H "Content-Type: application/octet-stream" \
-                  --data-binary @"${file_to_duplicate}" \
-                  "${upload_url}?name=${file_name}&label=${file_name}"
+                  --data-binary @"Phaito.dmg" \
+                  "${upload_url}?name=Phaito.dmg&label=Phaito.dmg"
             fi
           fi
         env:
