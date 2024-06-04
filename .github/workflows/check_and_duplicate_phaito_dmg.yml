@@ -1,4 +1,4 @@
-name: Check and Duplicate Phaito.dmg
+name: Check and Duplicate Phaito.dmg and YML file
 
 on:
   release:
@@ -29,6 +29,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract version
+        id: extract_version
+        run: echo "::set-output name=version::${{ steps.get_release.outputs.data.tag_name }}".substring(1)
+  
       - name: Check and duplicate Phaito.dmg
         run: |
           release_id=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.id')
@@ -59,7 +63,20 @@ jobs:
           assets=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "${assets_url}")
 
           if ! echo "${assets}" | jq -e '.[] | select(.name == "latest-mac.yml")'; then
-            node generate-latest-mac-yml.js ${{ steps.get_release.outputs.data.tag_name }} ./
+
+            file_to_duplicate_dmg=$(echo "${assets}" | jq -r '.[] | select(.name | test("^Phaito_.*\\.dmg$")) | .browser_download_url')
+            if [ -n "${file_to_duplicate_dmg}" ]; then
+              # Download the file
+              curl -L -o "Phaito_${{ steps.extract_version.outputs.version }}.dmg" "${file_to_duplicate_dmg}"
+            fi
+
+            file_to_duplicate_zip=$(echo "${assets}" | jq -r '.[] | select(.name | test("^Phaito_.*\\.zip$")) | .browser_download_url')
+            if [ -n "${file_to_duplicate_zip}" ]; then
+              # Download the file
+              curl -L -o "Phaito_${{ steps.extract_version.outputs.version }}.zip" "${file_to_duplicate_zip}"
+            fi
+
+            node scripts/generate-latest-mac-yml.js ${{ steps.extract_version.outputs.version }} ./
           fi
 
       - name: Upload latest-mac.yml

@@ -17,6 +17,13 @@ async function generateYAML(version, releaseDir) {
 
     const versionClean = version.replace(/^v/, '').trim();
 
+    const releaseDir = path.join(__dirname, '../');
+    const latestMacYmlPath = path.join(releaseDir, 'latest-mac.yml');
+    if (fs.existsSync(latestMacYmlPath)) {
+        console.log();
+        throw new Error('latest-mac.yml already exists. No action needed.');
+    }
+
     const zipFile = path.join(releaseDir, `Phaito_${versionClean}.zip`);
     const dmgFile = path.join(releaseDir, `Phaito_${versionClean}.dmg`);
 
@@ -41,7 +48,7 @@ path: Phaito_${versionClean}.zip
 sha512: ${zipSHA512}
 releaseDate: '${new Date().toISOString()}'`;
 
-    fs.writeFileSync(path.join(releaseDir, 'latest-mac.yml'), yamlContent);
+    fs.writeFileSync(latestMacYmlPath, yamlContent);
     console.log(`latest-mac.yml generated successfully for version ${versionClean}`);
 }
 
