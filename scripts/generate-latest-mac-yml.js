@@ -56,7 +56,7 @@ async function main() {
     const version = process.argv[2];
 
     if (!version) {
-        throw new Error('Version and release directory must be specified');
+        throw new Error('Version must be specified');
     }
 
     await generateYAML(version);
