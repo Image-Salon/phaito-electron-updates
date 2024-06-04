@@ -37,7 +37,12 @@ jobs:
             tag_name=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.tag_name')
             version="${tag_name#v}"
             echo "VERSION=$version" >> $GITHUB_ENV
-            echo "VERSION : $VERSION (${{ env.VERSION }})"
+
+      - name: Get version
+        env:
+          VERSION: ${{ env.VERSION }}
+        run: |
+          echo "VERSION : $VERSION (${{ env.VERSION }})"
   
       - name: Check and duplicate Phaito.dmg
         run: |
