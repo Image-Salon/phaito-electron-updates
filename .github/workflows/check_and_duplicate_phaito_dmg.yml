@@ -81,7 +81,7 @@ jobs:
               curl -L -o "Phaito_${{ env.VERSION }}.zip" "${file_to_duplicate_zip}"
             fi
 
-            node scripts/generate-latest-mac-yml.js ${{ env.VERSION }} ./
+            node scripts/generate-latest-mac-yml.js ${{ env.VERSION }}
           fi
 
       - name: Upload latest-mac.yml

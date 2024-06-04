@@ -13,7 +13,7 @@ function calculateSHA512(filePath) {
     });
 }
 
-async function generateYAML(version, releaseDir) {
+async function generateYAML(version) {
 
     const versionClean = version.replace(/^v/, '').trim();
 
@@ -54,13 +54,12 @@ releaseDate: '${new Date().toISOString()}'`;
 
 async function main() {
     const version = process.argv[2];
-    const releaseDir = process.argv[3];
 
-    if (!version || !releaseDir) {
+    if (!version) {
         throw new Error('Version and release directory must be specified');
     }
 
-    await generateYAML(version, releaseDir);
+    await generateYAML(version);
 }
 
 main().catch(error => {
