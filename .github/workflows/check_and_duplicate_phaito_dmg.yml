@@ -51,3 +51,26 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate latest-mac.yml if not exists
+        if: success()
+        run: |
+          assets_url=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.assets_url')
+          assets=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "${assets_url}")
+
+          if ! echo "${assets}" | jq -e '.[] | select(.name == "latest-mac.yml")'; then
+            node generate-latest-mac-yml.js ${{ steps.get_release.outputs.data.tag_name }} ./
+          fi
+
+      - name: Upload latest-mac.yml
+        if: success()
+        run: |
+          upload_url=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.upload_url' | sed 's/{.*}//')
+          if [ -f "latest-mac.yml" ]; then
+            curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                -H "Content-Type: text/yaml" \
+                --data-binary @"latest-mac.yml" \
+                "${upload_url}?name=latest-mac.yml&label=latest-mac.yml"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
