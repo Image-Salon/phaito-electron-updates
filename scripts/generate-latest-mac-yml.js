@@ -60,12 +60,7 @@ async function main() {
         throw new Error('Version and release directory must be specified');
     }
 
-    const latestMacYmlPath = path.join(releaseDir, 'latest-mac.yml');
-    if (!fs.existsSync(latestMacYmlPath)) {
-        await generateYAML(version, releaseDir);
-    } else {
-        console.log('latest-mac.yml already exists. No action needed.');
-    }
+    await generateYAML(version, releaseDir);
 }
 
 main().catch(error => {
