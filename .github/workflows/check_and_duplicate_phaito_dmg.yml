@@ -1,106 +1,104 @@
 name: Check and Duplicate Phaito.dmg and YML file
 
 on:
-  release:
-    types: [published]
+    release:
+        types: [published]
 
-  schedule:
-    - cron: "0 0 * * *"
+    schedule:
+        - cron: '0 0 * * *'
 
-  workflow_dispatch:
+    workflow_dispatch:
 
 jobs:
-  check-and-duplicate:
-    runs-on: ubuntu-latest
+    check-and-duplicate:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v2
 
-      - name: Get latest release
-        id: get_release
-        uses: octokit/request-action@v2.x
-        with:
-          #route: GET /repos/${{ github.repository }}/releases/latest
-          route: GET /repos/{owner}/{repo}/releases/latest
-          owner: Image-Salon
-          repo: phaito-electron-updates
+            - name: Get latest release
+              id: get_release
+              uses: octokit/request-action@v2.x
+              with:
+                  #route: GET /repos/${{ github.repository }}/releases/latest
+                  route: GET /repos/{owner}/{repo}/releases/latest
+                  owner: Image-Salon
+                  repo: phaito-electron-updates
 
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-          # tag_name="${{ steps.get_release.outputs.data.tag_name }}"
+            - name: Extract version
+              id: extract_version
+              run: |
+                  tag_name=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.tag_name')
+                  version="${tag_name#v}"
+                  echo "VERSION=$version" >> $GITHUB_ENV
 
-      - name: Extract version
-        id: extract_version
-        run: |
-            tag_name=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.tag_name')
-            version="${tag_name#v}"
-            echo "VERSION=$version" >> $GITHUB_ENV
+            - name: Get version
+              env:
+                  VERSION: ${{ env.VERSION }}
+              run: |
+                  echo "VERSION : $VERSION (${{ env.VERSION }})"
 
-      - name: Get version
-        env:
-          VERSION: ${{ env.VERSION }}
-        run: |
-          echo "VERSION : $VERSION (${{ env.VERSION }})"
-  
-      - name: Check and duplicate Phaito.dmg
-        run: |
-          release_id=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.id')
-          assets_url=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.assets_url')
-          assets=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "${assets_url}")
+            - name: Check and duplicate Phaito.dmg
+              run: |
+                  release_id=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.id')
+                  assets_url=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.assets_url')
+                  assets=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "${assets_url}")
 
-          if ! echo "${assets}" | jq -e '.[] | select(.name == "Phaito.dmg")'; then
-            file_to_duplicate=$(echo "${assets}" | jq -r '.[] | select(.name | test("^Phaito_.*\\.dmg$")) | .browser_download_url')
-            if [ -n "${file_to_duplicate}" ]; then
-              # Download the file
-              curl -L -o Phaito.dmg "${file_to_duplicate}"
-              
-              # Upload the file
-              upload_url=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.upload_url' | sed 's/{.*}//')
-              curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                  -H "Content-Type: application/octet-stream" \
-                  --data-binary @"Phaito.dmg" \
-                  "${upload_url}?name=Phaito.dmg&label=Phaito.dmg"
-            fi
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  if ! echo "${assets}" | jq -e '.[] | select(.name == "Phaito.dmg")'; then
+                    file_to_duplicate=$(echo "${assets}" | jq -r '.[] | select(.name | test("^Phaito_.*\\.dmg$")) | .browser_download_url')
+                    if [ -n "${file_to_duplicate}" ]; then
+                      # Download the file
+                      curl -L -o Phaito.dmg "${file_to_duplicate}"
+                      
+                      # Upload the file
+                      upload_url=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.upload_url' | sed 's/{.*}//')
+                      curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                          -H "Content-Type: application/octet-stream" \
+                          --data-binary @"Phaito.dmg" \
+                          "${upload_url}?name=Phaito.dmg&label=Phaito.dmg"
+                    fi
+                  fi
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate latest-mac.yml if not exists
-        if: success()
-        env:
-          VERSION: ${{ env.VERSION }}
-        run: |
-          assets_url=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.assets_url')
-          assets=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "${assets_url}")
+            - name: Generate latest-mac.yml if not exists
+              if: success()
+              env:
+                  VERSION: ${{ env.VERSION }}
+              run: |
+                  assets_url=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.assets_url')
+                  assets=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "${assets_url}")
 
-          if ! echo "${assets}" | jq -e '.[] | select(.name == "latest-mac.yml")'; then
+                  if ! echo "${assets}" | jq -e '.[] | select(.name == "latest-mac.yml")'; then
 
-            file_to_duplicate_dmg=$(echo "${assets}" | jq -r '.[] | select(.name | test("^Phaito_.*\\.dmg$")) | .browser_download_url')
-            if [ -n "${file_to_duplicate_dmg}" ]; then
-              # Download the file
-              curl -L -o "Phaito_${{ env.VERSION }}.dmg" "${file_to_duplicate_dmg}"
-            fi
+                    file_to_duplicate_dmg=$(echo "${assets}" | jq -r '.[] | select(.name | test("^Phaito_.*\\.dmg$")) | .browser_download_url')
+                    if [ -n "${file_to_duplicate_dmg}" ]; then
+                      # Download the file
+                      curl -L -o "Phaito_${{ env.VERSION }}.dmg" "${file_to_duplicate_dmg}"
+                    fi
 
-            file_to_duplicate_zip=$(echo "${assets}" | jq -r '.[] | select(.name | test("^Phaito_.*\\.zip$")) | .browser_download_url')
-            if [ -n "${file_to_duplicate_zip}" ]; then
-              # Download the file
-              curl -L -o "Phaito_${{ env.VERSION }}.zip" "${file_to_duplicate_zip}"
-            fi
+                    file_to_duplicate_zip=$(echo "${assets}" | jq -r '.[] | select(.name | test("^Phaito_.*\\.zip$")) | .browser_download_url')
+                    if [ -n "${file_to_duplicate_zip}" ]; then
+                      # Download the file
+                      curl -L -o "Phaito_${{ env.VERSION }}.zip" "${file_to_duplicate_zip}"
+                    fi
 
-            node scripts/generate-latest-mac-yml.js ${{ env.VERSION }}
-          fi
+                    node scripts/generate-latest-mac-yml.js ${{ env.VERSION }}
+                  fi
 
-      - name: Upload latest-mac.yml
-        if: success()
-        run: |
-          upload_url=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.upload_url' | sed 's/{.*}//')
-          if [ -f "latest-mac.yml" ]; then
-            curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                -H "Content-Type: text/yaml" \
-                --data-binary @"latest-mac.yml" \
-                "${upload_url}?name=latest-mac.yml&label=latest-mac.yml"
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: Upload latest-mac.yml
+              if: success()
+              run: |
+                  upload_url=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.upload_url' | sed 's/{.*}//')
+                  if [ -f "latest-mac.yml" ]; then
+                    curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                        -H "Content-Type: text/yaml" \
+                        --data-binary @"latest-mac.yml" \
+                        "${upload_url}?name=latest-mac.yml&label=latest-mac.yml"
+                  fi
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
