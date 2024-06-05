@@ -84,7 +84,7 @@ jobs:
               if: success()
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  ASSETS_URL: $(cat assets_url.txt)
+                  ASSETS_URL: ${{ env.ASSETS_URL }}
                   VERSION: ${{ env.VERSION }}
               run: |
                   assets=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$ASSETS_URL")
@@ -110,7 +110,7 @@ jobs:
               if: success()
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  UPLOAD_URL: $(cat upload_url.txt | sed 's/{.*}//')
+                  UPLOAD_URL: ${{ env.UPLOAD_URL }}
               run: |
                   if [ -f "latest-mac.yml" ]; then
                     curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
