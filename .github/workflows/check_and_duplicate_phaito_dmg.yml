@@ -28,10 +28,13 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+            - name: Write release data to file
+              run: echo '${{ steps.get_release.outputs.data }}' > release_data.json
+
             - name: Extract version
               id: extract_version
               run: |
-                  tag_name=$(echo '${{ steps.get_release.outputs.data }}' | jq -r '.tag_name')
+                  tag_name=$(jq -r '.tag_name' release_data.json)
                   version="${tag_name#v}"
                   echo "VERSION=$version" >> $GITHUB_ENV
 
@@ -43,9 +46,8 @@ jobs:
 
             - name: Check and duplicate Phaito.dmg
               run: |
-                  release_data='${{ steps.get_release.outputs.data }}'
-                  release_id=$(echo "$release_data" | jq -r '.id')
-                  assets_url=$(echo "$release_data" | jq -r '.assets_url')
+                  release_id=$(jq -r '.id' release_data.json)
+                  assets_url=$(jq -r '.assets_url' release_data.json)
                   assets=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$assets_url")
 
                   if ! echo "$assets" | jq -e '.[] | select(.name == "Phaito.dmg")'; then
@@ -55,7 +57,7 @@ jobs:
                       curl -L -o Phaito.dmg "$file_to_duplicate"
                       
                       # Upload the file
-                      upload_url=$(echo "$release_data" | jq -r '.upload_url' | sed 's/{.*}//')
+                      upload_url=$(jq -r '.upload_url' release_data.json | sed 's/{.*}//')
                       curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                           -H "Content-Type: application/octet-stream" \
                           --data-binary @"Phaito.dmg" \
@@ -70,8 +72,7 @@ jobs:
               env:
                   VERSION: ${{ env.VERSION }}
               run: |
-                  release_data='${{ steps.get_release.outputs.data }}'
-                  assets_url=$(echo "$release_data" | jq -r '.assets_url')
+                  assets_url=$(jq -r '.assets_url' release_data.json)
                   assets=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$assets_url")
 
                   if ! echo "$assets" | jq -e '.[] | select(.name == "latest-mac.yml")'; then
@@ -94,8 +95,7 @@ jobs:
             - name: Upload latest-mac.yml
               if: success()
               run: |
-                  release_data='${{ steps.get_release.outputs.data }}'
-                  upload_url=$(echo "$release_data" | jq -r '.upload_url' | sed 's/{.*}//')
+                  upload_url=$(jq -r '.upload_url' release_data.json | sed 's/{.*}//')
                   if [ -f "latest-mac.yml" ]; then
                     curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                         -H "Content-Type: text/yaml" \
