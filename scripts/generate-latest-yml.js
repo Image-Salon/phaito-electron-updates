@@ -13,8 +13,7 @@ function calculateSHA512(filePath) {
     });
 }
 
-async function generateYAML(version) {
-
+async function generateYAMLMac(version) {
     const versionClean = version.replace(/^v/, '').trim();
 
     const releaseDir = path.join(__dirname, '../');
@@ -52,17 +51,65 @@ releaseDate: '${new Date().toISOString()}'`;
     console.log(`latest-mac.yml generated successfully for version ${versionClean}`);
 }
 
+async function generateYAMLWin(version) {
+    const versionClean = version.replace(/^v/, '').trim();
+
+    const releaseDir = path.join(__dirname, '../');
+    const latestMacYmlPath = path.join(releaseDir, 'latest.yml');
+    if (fs.existsSync(latestMacYmlPath)) {
+        console.log();
+        throw new Error('latest.yml already exists. No action needed.');
+    }
+
+    const exeFile = path.join(releaseDir, `Phaito_${versionClean}.exe`);
+
+    if (!fs.existsSync(exeFile) || !fs.existsSync(dmgFile)) {
+        throw new Error(`Files not found in ${releaseDir}`);
+    }
+
+    const exeStats = fs.statSync(exeFile);
+    const exeSHA512 = await calculateSHA512(exeFile);
+
+    const yamlContent = `version: ${versionClean}
+files:
+  - url: Phaito_${versionClean}.exe
+    sha512: ${exeSHA512}
+    size: ${exeStats.size}
+path: Phaito_${versionClean}.exe
+sha512: ${exeSHA512}
+releaseDate: '${new Date().toISOString()}'`;
+
+    fs.writeFileSync(latestMacYmlPath, yamlContent);
+    console.log(`latest.yml generated successfully for version ${versionClean}`);
+}
+
 async function main() {
     const version = process.argv[2];
-
     if (!version) {
         throw new Error('Version must be specified');
     }
 
-    await generateYAML(version);
+    const os = process.argv[3];
+    if (!os) {
+        throw new Error('OS must be specified');
+    }
+
+    switch (os) {
+        case 'mac':
+            await generateYAMLMac(version);
+            break;
+
+        case 'win':
+        case 'win32':
+            await generateYAMLWin(version);
+            break;
+
+        default:
+            throw new Error('OS not supported');
+    }
 }
 
-main().catch(error => {
+main().catch((error) => {
     console.error(`Error: ${error.message}`);
     process.exit(1);
 });
