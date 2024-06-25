@@ -58,6 +58,67 @@ jobs:
                   echo "ASSETS_URL: $ASSETS_URL"
                   echo "UPLOAD_URL: $UPLOAD_URL"
 
+            - name: Check and duplicate Phaito.exe
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  ASSETS_URL: ${{ env.ASSETS_URL }}
+                  UPLOAD_URL: ${{ env.UPLOAD_URL }}
+              run: |
+                  assets=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$ASSETS_URL")
+
+                  if ! echo "$assets" | jq -e '.[] | select(.name == "Phaito.exe")'; then
+                    file_to_duplicate=$(echo "$assets" | jq -r '.[] | select(.name | test("^Phaito_.*\\.exe$")) | .browser_download_url')
+                    if [ -n "$file_to_duplicate" ]; then
+                      # Download the file
+                      curl -L -o Phaito.exe "$file_to_duplicate"
+                      
+                      # Upload the file
+                      curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+                          -H "Content-Type: application/octet-stream" \
+                          --data-binary @"Phaito.exe" \
+                          "$UPLOAD_URL?name=Phaito.exe&label=Phaito.exe"
+                    fi
+                  fi
+
+            - name: Generate latest.yml if not exists
+              if: success()
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  ASSETS_URL: ${{ env.ASSETS_URL }}
+                  VERSION: ${{ env.VERSION }}
+              run: |
+                  assets=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$ASSETS_URL")
+
+                  if ! echo "$assets" | jq -e '.[] | select(.name == "latest.yml")'; then
+
+                    file_to_duplicate_dmg=$(echo "$assets" | jq -r '.[] | select(.name | test("^Phaito_.*\\.dmg$")) | .browser_download_url')
+                    if [ -n "$file_to_duplicate_dmg" ]; then
+                      # Download the file
+                      curl -L -o "Phaito_${VERSION}.dmg" "$file_to_duplicate_dmg"
+                    fi
+
+                    file_to_duplicate_zip=$(echo "$assets" | jq -r '.[] | select(.name | test("^Phaito_.*\\.zip$")) | .browser_download_url')
+                    if [ -n "$file_to_duplicate_zip" ]; then
+                      # Download the file
+                      curl -L -o "Phaito_${VERSION}.zip" "$file_to_duplicate_zip"
+                    fi
+
+                    node scripts/generate-latest-yml.js "${VERSION}" "win32"
+                  fi
+
+            - name: Upload latest.yml
+              if: success()
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  UPLOAD_URL: ${{ env.UPLOAD_URL }}
+              run: |
+                  if [ -f "latest.yml" ]; then
+                    curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+                        -H "Content-Type: text/yaml" \
+                        --data-binary @"latest.yml" \
+                        "$UPLOAD_URL?name=latest.yml&label=latest.yml"
+                  fi
+
             - name: Check and duplicate Phaito.dmg
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -103,7 +164,7 @@ jobs:
                       curl -L -o "Phaito_${VERSION}.zip" "$file_to_duplicate_zip"
                     fi
 
-                    node scripts/generate-latest-mac-yml.js "${VERSION}"
+                    node scripts/generate-latest-yml.js "${VERSION}" "mac"
                   fi
 
             - name: Upload latest-mac.yml
