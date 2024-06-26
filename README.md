@@ -7,3 +7,4 @@
 ## Download links
 
 - `https://github.com/Image-Salon/phaito-electron-updates/releases/latest/download/Phaito.dmg`
+- `https://github.com/Image-Salon/phaito-electron-updates/releases/latest/download/Phaito.exe`
