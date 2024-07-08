@@ -1,0 +1,169 @@
+name: Create Release
+
+on:
+    workflow_dispatch:
+        inputs:
+            pre-release:
+                description: 'Create a pre-release (true/false)?'
+                required: true
+                default: false
+                type: boolean
+
+    repository_dispatch:
+        types: [run-release-process]
+
+defaults:
+    run:
+        shell: 'bash'
+
+jobs:
+    create-pre-release:
+        runs-on: ubuntu-latest
+        env:
+            REPO_ELECTRON: Image-Salon/phaito-electron
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
+
+            - name: Extract version from package.json
+              run: |
+                  sudo apt-get install -y jq
+                  VERSION=$(jq -r '.version' < package.json)
+
+                  IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+                  CURRENT_VERSION="$MAJOR.$MINOR.$PATCH"
+
+                  echo "CURRENT_VERSION : $CURRENT_VERSION (${{ env.CURRENT_VERSION }})"
+
+                  NEXT_PATCH=$((PATCH + 1))
+                  NEXT_VERSION="$MAJOR.$MINOR.$NEXT_PATCH"
+
+                  echo "VERSION=$NEXT_VERSION" >> $GITHUB_ENV
+                  echo "PACKAGE_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
+
+            - name: Check version number
+              env:
+                  PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
+                  VERSION: ${{ env.VERSION }}
+              run: |
+                  echo "PACKAGE_VERSION : $PACKAGE_VERSION (${{ env.PACKAGE_VERSION }})"
+                  echo "VERSION : $VERSION (${{ env.VERSION }})"
+                  echo "REPO_ELECTRON : ${{ env.REPO_ELECTRON }}"
+
+            - name: Fetch Recent Workflows and Match Artifacts
+              env:
+                  PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
+              run: |
+                  # Fetch the last 5 workflow runs for the specified workflow
+                  runs=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                              -H "Accept: application/vnd.github.v3+json" \
+                              "https://api.github.com/repos/${{ env.REPO_ELECTRON }}/actions/workflows/build-release-process.yml/runs?event=workflow_dispatch&per_page=5")
+                      # &status=completed
+
+                  #echo "Fetched runs: $runs"
+
+                  # Loop through the workflow runs
+                  for i in {0..4}; do
+                    # Fetch artifacts for each run
+                    artifacts_url=$(echo "$runs" | jq -r ".workflow_runs[$i].artifacts_url")
+                    artifacts=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                                    -H "Accept: application/vnd.github.v3+json" \
+                                    "$artifacts_url")
+
+                    echo "Artifacts for run $i: $artifacts"
+
+                    # Check if there is an artifact matching the pattern
+                    match=$(echo "$artifacts" | jq -r ".artifacts[] | select(.name | test(\"electron-artifacts-${{ env.PACKAGE_VERSION }}-.*\"))")
+                    if [[ ! -z "$match" ]]; then
+                      # Get the run ID if a matching artifact is found
+                      run_id=$(echo "$runs" | jq -r ".workflow_runs[$i].id")
+                      echo "Matching artifact found in run $i: $run_id"
+
+                      # Save the run ID to the GITHUB_ENV to use in other steps
+                      echo "RUN_ID=$run_id" >> $GITHUB_ENV
+                      break
+                    fi
+                  done
+
+            - name: Verify RUN_ID is Set
+              env:
+                  RUN_ID: ${{ env.RUN_ID }}
+              run: |
+                  # Check if RUN_ID is unset, empty, or "null"
+                  if [[ -z "${{ env.RUN_ID }}" || "${{ env.RUN_ID }}" == "null" ]]; then
+                    echo "Error: RUN_ID is not properly set."
+                    exit 1
+                  else
+                    echo "RUN_ID is set to ${{ env.RUN_ID }}. Proceeding with the workflow."
+                  fi
+
+            - name: Download Artifacts
+              uses: actions/download-artifact@v4
+              env:
+                  PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
+                  RUN_ID: ${{ env.RUN_ID }}
+                  REPO_ELECTRON: ${{ env.REPO_ELECTRON }}
+              with:
+                  path: release/${{ env.PACKAGE_VERSION }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  repository: ${{ env.REPO_ELECTRON }}
+                  pattern: electron-artifacts-${{ env.PACKAGE_VERSION }}-*
+                  merge-multiple: true
+                  run-id: ${{ env.RUN_ID }}
+
+            - name: Show artifacts folder
+              env:
+                  PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
+              run: ls -R release/${{ env.PACKAGE_VERSION }}
+
+            #- name: Tag the commit
+            #  if: ${{ github.event_name != 'workflow_dispatch' }}
+            #  env:
+            #      PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
+            #  run: |
+            #      git config --local user.email "action@github.com"
+            #      git config --local user.name "GitHub Action"
+            #      git tag -a v${{ env.PACKAGE_VERSION }} -m "Release v${{ env.PACKAGE_VERSION }}"
+            #      git push origin v${{ env.PACKAGE_VERSION }}
+
+            - name: Update package.json
+              env:
+                  PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
+              run: |
+                  echo "npm New version: ${{ env.PACKAGE_VERSION }}"
+                  npm version ${{ env.PACKAGE_VERSION }} --no-git-tag-version
+
+            - name: Update package-lock.json
+              run: npm install --package-lock-only
+
+            - name: Update package-lock.json manually
+              env:
+                  PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
+              run: |
+                  jq '.packages[""].version = "${{ env.PACKAGE_VERSION }}"' package-lock.json > temp.json
+                  mv temp.json package-lock.json
+
+            - name: Commit and push changes
+              env:
+                  PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
+              run: |
+                  git config --local user.email "action@github.com"
+                  git config --local user.name "GitHub Action"
+                  git add package.json package-lock.json
+                  git commit -m "CHG: automatic prep for ${{ env.PACKAGE_VERSION }}" -n
+                  git push origin
+
+            - name: Create Pre-Release
+              if: ${{ github.event_name != 'workflow_dispatch' || ( github.event_name == 'workflow_dispatch' && (github.event.inputs.pre-release == 'true' || github.event.inputs.pre-release == true ))}}
+              uses: softprops/action-gh-release@v2
+              env:
+                  PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  files: release/${{ env.PACKAGE_VERSION }}/*
+                  draft: false
+                  prerelease: true
+                  tag_name: v${{ env.PACKAGE_VERSION }}
+                  name: Release v${{ env.PACKAGE_VERSION }}
+                  body: Pre-release of v${{ env.PACKAGE_VERSION }}
