@@ -56,7 +56,7 @@ jobs:
                   PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
               run: |
                   # Fetch the last 5 workflow runs for the specified workflow
-                  runs=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                  runs=$(curl -H "Authorization: token ${{ secrets.GH_TOKEN_REPO_READ }}" \
                               -H "Accept: application/vnd.github.v3+json" \
                               "https://api.github.com/repos/${{ env.REPO_ELECTRON }}/actions/workflows/build-release-process.yml/runs?event=workflow_dispatch&per_page=5")
                       # &status=completed
@@ -67,7 +67,7 @@ jobs:
                   for i in {0..4}; do
                     # Fetch artifacts for each run
                     artifacts_url=$(echo "$runs" | jq -r ".workflow_runs[$i].artifacts_url")
-                    artifacts=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                    artifacts=$(curl -H "Authorization: token ${{ secrets.GH_TOKEN_REPO_READ }}" \
                                     -H "Accept: application/vnd.github.v3+json" \
                                     "$artifacts_url")
 
@@ -106,7 +106,7 @@ jobs:
                   REPO_ELECTRON: ${{ env.REPO_ELECTRON }}
               with:
                   path: release/${{ env.PACKAGE_VERSION }}
-                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  github-token: ${{ secrets.GH_TOKEN_REPO_READ }}
                   repository: ${{ env.REPO_ELECTRON }}
                   pattern: electron-artifacts-${{ env.PACKAGE_VERSION }}-*
                   merge-multiple: true
