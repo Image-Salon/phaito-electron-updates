@@ -69,6 +69,7 @@ jobs:
                     echo "PHATO_EXE_EXISTS=true" >> $GITHUB_ENV
                   else
                     echo "PHATO_EXE_EXISTS=false" >> $GITHUB_ENV
+                  fi
 
             - name: Check and duplicate Phaito.exe
               if: env.PHATO_EXE_EXISTS == 'false'
@@ -142,6 +143,7 @@ jobs:
                     echo "PHATO_DMG_EXISTS=true" >> $GITHUB_ENV
                   else
                     echo "PHATO_DMG_EXISTS=false" >> $GITHUB_ENV
+                  fi
 
             - name: Check and duplicate Phaito.dmg
               if: env.PHATO_DMG_EXISTS == 'false'
