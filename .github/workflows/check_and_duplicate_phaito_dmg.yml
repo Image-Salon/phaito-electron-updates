@@ -63,6 +63,7 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   ASSETS_URL: ${{ env.ASSETS_URL }}
+                  PHATO_EXE_EXISTS: ${{ env.PHATO_EXE_EXISTS }}
               run: |
                   assets=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$ASSETS_URL")
                   if echo "$assets" | jq -e '.[] | select(.name == "Phaito.exe")'; then
@@ -70,6 +71,8 @@ jobs:
                   else
                     echo "PHATO_EXE_EXISTS=false" >> $GITHUB_ENV
                   fi
+
+                  echo "PHATO_EXE_EXISTS : ${{ env.PHATO_EXE_EXISTS }}"
 
             - name: Check and duplicate Phaito.exe
               if: env.PHATO_EXE_EXISTS == 'false'
@@ -97,8 +100,11 @@ jobs:
                     fi
                   fi
 
+                  echo "PHATO_EXE_EXISTS : ${{ env.PHATO_EXE_EXISTS }}"
+
             - name: Check latest.yml
               id: check_latest_yml
+              if: env.PHATO_EXE_EXISTS == 'true'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   ASSETS_URL: ${{ env.ASSETS_URL }}
@@ -157,6 +163,7 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   ASSETS_URL: ${{ env.ASSETS_URL }}
+                  PHATO_DMG_EXISTS: ${{ env.PHATO_DMG_EXISTS }}
               run: |
                   assets=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$ASSETS_URL")
                   if echo "$assets" | jq -e '.[] | select(.name == "Phaito.dmg")'; then
@@ -164,6 +171,8 @@ jobs:
                   else
                     echo "PHATO_DMG_EXISTS=false" >> $GITHUB_ENV
                   fi
+
+                  echo "PHATO_DMG_EXISTS : ${{ env.PHATO_DMG_EXISTS }}"
 
             - name: Check and duplicate Phaito.dmg
               if: env.PHATO_DMG_EXISTS == 'false'
@@ -191,8 +200,11 @@ jobs:
                     fi
                   fi
 
+                  echo "PHATO_DMG_EXISTS : ${{ env.PHATO_DMG_EXISTS }}"
+
             - name: Check latest-mac.yml
               id: check_latest_mac_yml
+              if: env.PHATO_DMG_EXISTS == 'true'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   ASSETS_URL: ${{ env.ASSETS_URL }}
