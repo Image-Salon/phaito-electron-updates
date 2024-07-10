@@ -1,4 +1,4 @@
-name: Check and Duplicate Phaito.dmg and YML file
+name: Check and Duplicate Phaito App and YML file
 
 on:
     release:
