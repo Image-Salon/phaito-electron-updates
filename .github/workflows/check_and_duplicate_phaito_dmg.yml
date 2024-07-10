@@ -97,13 +97,32 @@ jobs:
                     fi
                   fi
 
-            - name: Generate latest.yml if not exists
-              if: env.PHATO_EXE_EXISTS == 'true'
+            - name: Check latest.yml
+              id: check_latest_yml
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  ASSETS_URL: ${{ env.ASSETS_URL }}
+                  PHATO_EXE_EXISTS: ${{ env.PHATO_EXE_EXISTS }}
+                  PHATO_LATEST_YML_EXISTS: ${{ env.PHATO_LATEST_YML_EXISTS }}
+              run: |
+                  assets=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$ASSETS_URL")
+                  if echo "$assets" | jq -e '.[] | select(.name == "latest.yml")'; then
+                    echo "PHATO_LATEST_YML_EXISTS=true" >> $GITHUB_ENV
+                  else
+                    echo "PHATO_LATEST_YML_EXISTS=false" >> $GITHUB_ENV
+                  fi
+
+                  echo "PHATO_EXE_EXISTS : ${{ env.PHATO_EXE_EXISTS }}"
+                  echo "PHATO_LATEST_YML_EXISTS : ${{ env.PHATO_LATEST_YML_EXISTS }}"
+
+            - name: Generate latest.yml
+              if: env.PHATO_EXE_EXISTS == 'true' && env.PHATO_LATEST_YML_EXISTS == 'false'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   ASSETS_URL: ${{ env.ASSETS_URL }}
                   VERSION: ${{ env.VERSION }}
                   PHATO_EXE_EXISTS: ${{ env.PHATO_EXE_EXISTS }}
+                  PHATO_LATEST_YML_EXISTS: ${{ env.PHATO_LATEST_YML_EXISTS }}
               run: |
                   assets=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$ASSETS_URL")
 
@@ -119,11 +138,12 @@ jobs:
                   fi
 
             - name: Upload latest.yml
-              if: env.PHATO_EXE_EXISTS == 'true'
+              if: env.PHATO_EXE_EXISTS == 'true' && env.PHATO_LATEST_YML_EXISTS == 'false'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   UPLOAD_URL: ${{ env.UPLOAD_URL }}
                   PHATO_EXE_EXISTS: ${{ env.PHATO_EXE_EXISTS }}
+                  PHATO_LATEST_YML_EXISTS: ${{ env.PHATO_LATEST_YML_EXISTS }}
               run: |
                   if [ -f "latest.yml" ]; then
                     curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
@@ -171,13 +191,32 @@ jobs:
                     fi
                   fi
 
-            - name: Generate latest-mac.yml if not exists
-              if: env.PHATO_DMG_EXISTS == 'true'
+            - name: Check latest-mac.yml
+              id: check_latest_mac_yml
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  ASSETS_URL: ${{ env.ASSETS_URL }}
+                  PHATO_DMG_EXISTS: ${{ env.PHATO_DMG_EXISTS }}
+                  PHATO_LATEST_MAC_YML_EXISTS: ${{ env.PHATO_LATEST_MAC_YML_EXISTS }}
+              run: |
+                  assets=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$ASSETS_URL")
+                  if echo "$assets" | jq -e '.[] | select(.name == "latest-mac.yml")'; then
+                    echo "PHATO_LATEST_MAC_YML_EXISTS=true" >> $GITHUB_ENV
+                  else
+                    echo "PHATO_LATEST_MAC_YML_EXISTS=false" >> $GITHUB_ENV
+                  fi
+
+                  echo "PHATO_DMG_EXISTS : ${{ env.PHATO_DMG_EXISTS }}"
+                  echo "PHATO_LATEST_MAC_YML_EXISTS : ${{ env.PHATO_LATEST_MAC_YML_EXISTS }}"
+
+            - name: Generate latest-mac.yml
+              if: env.PHATO_DMG_EXISTS == 'true' && env.PHATO_LATEST_MAC_YML_EXISTS == 'false'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   ASSETS_URL: ${{ env.ASSETS_URL }}
                   VERSION: ${{ env.VERSION }}
                   PHATO_DMG_EXISTS: ${{ env.PHATO_DMG_EXISTS }}
+                  PHATO_LATEST_MAC_YML_EXISTS: ${{ env.PHATO_LATEST_MAC_YML_EXISTS }}
               run: |
                   assets=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$ASSETS_URL")
 
@@ -199,11 +238,12 @@ jobs:
                   fi
 
             - name: Upload latest-mac.yml
-              if: env.PHATO_DMG_EXISTS == 'true'
+              if: env.PHATO_DMG_EXISTS == 'true' && env.PHATO_LATEST_MAC_YML_EXISTS == 'false'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   UPLOAD_URL: ${{ env.UPLOAD_URL }}
                   PHATO_DMG_EXISTS: ${{ env.PHATO_DMG_EXISTS }}
+                  PHATO_LATEST_MAC_YML_EXISTS: ${{ env.PHATO_LATEST_MAC_YML_EXISTS }}
               run: |
                   if [ -f "latest-mac.yml" ]; then
                     curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
