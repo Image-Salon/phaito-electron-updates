@@ -71,8 +71,6 @@ jobs:
                     PHATO_EXE_EXISTS=true
                   fi
 
-                  echo "PHATO_EXE_EXISTS : ${{ env.PHATO_EXE_EXISTS }}"
-
                   echo "PHATO_EXE_EXISTS=$PHATO_EXE_EXISTS" >> $GITHUB_ENV
                   echo "PHATO_EXE_EXISTS : $PHATO_EXE_EXISTS"
 
