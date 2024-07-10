@@ -58,11 +58,25 @@ jobs:
                   echo "ASSETS_URL: $ASSETS_URL"
                   echo "UPLOAD_URL: $UPLOAD_URL"
 
+            - name: Check Phaito.exe
+              id: check_phaito_exe
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  ASSETS_URL: ${{ env.ASSETS_URL }}
+              run: |
+                  assets=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$ASSETS_URL")
+                  if echo "$assets" | jq -e '.[] | select(.name == "Phaito.exe")'; then
+                    echo "PHATO_EXE_EXISTS=true" >> $GITHUB_ENV
+                  else
+                    echo "PHATO_EXE_EXISTS=false" >> $GITHUB_ENV
+
             - name: Check and duplicate Phaito.exe
+              if: env.PHATO_EXE_EXISTS == 'false'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   ASSETS_URL: ${{ env.ASSETS_URL }}
                   UPLOAD_URL: ${{ env.UPLOAD_URL }}
+                  PHATO_EXE_EXISTS: ${{ env.PHATO_EXE_EXISTS }}
               run: |
                   assets=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$ASSETS_URL")
 
@@ -71,46 +85,44 @@ jobs:
                     if [ -n "$file_to_duplicate" ]; then
                       # Download the file
                       curl -L -o Phaito.exe "$file_to_duplicate"
-                      
+
                       # Upload the file
                       curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
                           -H "Content-Type: application/octet-stream" \
                           --data-binary @"Phaito.exe" \
                           "$UPLOAD_URL?name=Phaito.exe&label=Phaito.exe"
+
+                      echo "PHATO_EXE_EXISTS=true" >> $GITHUB_ENV
                     fi
                   fi
 
             - name: Generate latest.yml if not exists
-              if: success()
+              if: env.PHATO_EXE_EXISTS == 'true'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   ASSETS_URL: ${{ env.ASSETS_URL }}
                   VERSION: ${{ env.VERSION }}
+                  PHATO_EXE_EXISTS: ${{ env.PHATO_EXE_EXISTS }}
               run: |
                   assets=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$ASSETS_URL")
 
                   if ! echo "$assets" | jq -e '.[] | select(.name == "latest.yml")'; then
 
-                    file_to_duplicate_dmg=$(echo "$assets" | jq -r '.[] | select(.name | test("^Phaito_.*\\.dmg$")) | .browser_download_url')
-                    if [ -n "$file_to_duplicate_dmg" ]; then
+                    file_to_duplicate_exe=$(echo "$assets" | jq -r '.[] | select(.name | test("^Phaito_.*\\.exe$")) | .browser_download_url')
+                    if [ -n "$file_to_duplicate_exe" ]; then
                       # Download the file
-                      curl -L -o "Phaito_${VERSION}.dmg" "$file_to_duplicate_dmg"
-                    fi
-
-                    file_to_duplicate_zip=$(echo "$assets" | jq -r '.[] | select(.name | test("^Phaito_.*\\.zip$")) | .browser_download_url')
-                    if [ -n "$file_to_duplicate_zip" ]; then
-                      # Download the file
-                      curl -L -o "Phaito_${VERSION}.zip" "$file_to_duplicate_zip"
+                      curl -L -o "Phaito_${VERSION}.exe" "$file_to_duplicate_exe"
                     fi
 
                     node scripts/generate-latest-yml.js "${VERSION}" "win32"
                   fi
 
             - name: Upload latest.yml
-              if: success()
+              if: env.PHATO_EXE_EXISTS == 'true'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   UPLOAD_URL: ${{ env.UPLOAD_URL }}
+                  PHATO_EXE_EXISTS: ${{ env.PHATO_EXE_EXISTS }}
               run: |
                   if [ -f "latest.yml" ]; then
                     curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
@@ -119,11 +131,25 @@ jobs:
                         "$UPLOAD_URL?name=latest.yml&label=latest.yml"
                   fi
 
+            - name: Check Phaito.dmg
+              id: check_phaito_dmg
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  ASSETS_URL: ${{ env.ASSETS_URL }}
+              run: |
+                  assets=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$ASSETS_URL")
+                  if echo "$assets" | jq -e '.[] | select(.name == "Phaito.dmg")'; then
+                    echo "PHATO_DMG_EXISTS=true" >> $GITHUB_ENV
+                  else
+                    echo "PHATO_DMG_EXISTS=false" >> $GITHUB_ENV
+
             - name: Check and duplicate Phaito.dmg
+              if: env.PHATO_DMG_EXISTS == 'false'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   ASSETS_URL: ${{ env.ASSETS_URL }}
                   UPLOAD_URL: ${{ env.UPLOAD_URL }}
+                  PHATO_DMG_EXISTS: ${{ env.PHATO_DMG_EXISTS }}
               run: |
                   assets=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$ASSETS_URL")
 
@@ -138,15 +164,18 @@ jobs:
                           -H "Content-Type: application/octet-stream" \
                           --data-binary @"Phaito.dmg" \
                           "$UPLOAD_URL?name=Phaito.dmg&label=Phaito.dmg"
+
+                      echo "PHATO_DMG_EXISTS=true" >> $GITHUB_ENV
                     fi
                   fi
 
             - name: Generate latest-mac.yml if not exists
-              if: success()
+              if: env.PHATO_DMG_EXISTS == 'true'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   ASSETS_URL: ${{ env.ASSETS_URL }}
                   VERSION: ${{ env.VERSION }}
+                  PHATO_DMG_EXISTS: ${{ env.PHATO_DMG_EXISTS }}
               run: |
                   assets=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$ASSETS_URL")
 
@@ -168,10 +197,11 @@ jobs:
                   fi
 
             - name: Upload latest-mac.yml
-              if: success()
+              if: env.PHATO_DMG_EXISTS == 'true'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   UPLOAD_URL: ${{ env.UPLOAD_URL }}
+                  PHATO_DMG_EXISTS: ${{ env.PHATO_DMG_EXISTS }}
               run: |
                   if [ -f "latest-mac.yml" ]; then
                     curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
