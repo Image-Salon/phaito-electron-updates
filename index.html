@@ -1,81 +1,73 @@
 <!DOCTYPE html>
 <html lang="en" class="p-0 m-0">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Ouvrir / Open - PHAiTO</title>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ouvrir / Open - PHAiTO</title>
+        <link rel="shortcut icon" href="./assets/favicon.ico" />
+        <link rel="icon" type="image/x-icon" sizes="16x16 32x32" href="./assets/favicon.ico" />
+        <link rel="icon" sizes="192x192" href="./assets/favicon.png" />
 
-  <link rel="shortcut icon" href="./assets/favicon.ico" />
-  <link rel="icon" type="image/x-icon" sizes="16x16 32x32" href="./assets/favicon.ico" />
-  <link rel="icon" sizes="192x192" href="./assets/favicon.png" />
+        <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+        <style>
+            .text-phaito {
+                color: #62b0c7;
+            }
 
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <style>
-    .text-phaito {
-      color: #62b0c7;
-    }
+            .text-phaito-orange {
+                color: #ed6f4e;
+            }
 
-    .text-phaito-orange {
-      color: #ED6F4E;
-    }
+            .hover\:text-phaito-orange:hover {
+                color: #ed6f4e;
+            }
 
-    .hover\:text-phaito-orange:hover {
-      color: #ED6F4E;
-    }
+            .bg-phaito {
+                background-color: #62b0c7;
+            }
 
-    .bg-phaito {
-      background-color: #62b0c7;
-    }
+            .bg-phaito-orange {
+                background-color: #ed6f4e;
+            }
 
-    .bg-phaito-orange {
-      background-color: #ED6F4E;
-    }
+            .hover\:bg-phaito-orange:hover {
+                background-color: #ed6f4e;
+            }
+        </style>
 
-    .hover\:bg-phaito-orange:hover {
-      background-color: #ED6F4E;
-    }
-  </style>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                window.location.href = 'phaito://orders';
+            });
+        </script>
+    </head>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      window.location.href = 'phaito://orders';
-    });
-  </script>
-</head>
+    <body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen">
+        <header class="absolute top-0 l-0 w-full p-4 bg-white shadow-md flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <img src="./assets/favicon.svg" alt="PHAiTO" class="h-10" />
+                <a href="https://phaito.com" class="text-lg font-semibold text-gray-800 hover:text-gray-600 transition duration-300">Page d'accueil | Homepage</a>
+            </div>
+            <div>
+                <a href="https://client.phaito.com" class="bg-phaito text-white font-semibold py-2 px-4 rounded-lg hover:bg-phaito-orange transition duration-300">
+                    Login / Signup
+                </a>
+            </div>
+        </header>
+        <main class="bg-white p-8 rounded-lg shadow-md text-center mt-8">
+            <h1 class="text-2xl font-bold mb-4">Ouvrir / Open - PHAiTO</h1>
+            <p class="mb-6">Cliquez sur le bouton ci-dessous pour ouvrir l'application.<br />Click the button below to open the application.</p>
+            <button onclick="window.location.href='phaito://orders'" class="bg-phaito text-white font-semibold py-2 px-4 rounded-lg hover:bg-phaito-orange transition duration-300">
+                Ouvrir / Open PHAiTO
+            </button>
 
-<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen">
-  <header class="absolute top-0 l-0 w-full p-4 bg-white shadow-md flex justify-between items-center">
-    <div class="flex items-center space-x-2">
-      <img src="./assets/favicon.svg" alt="PHAiTO" class="h-10" />
-      <a href="https://phaito.com"
-        class="text-lg font-semibold text-gray-800 hover:text-gray-600 transition duration-300">Page
-        d'accueil | Homepage</a>
-    </div>
-    <div>
-      <a href="https://client.phaito.com"
-        class="bg-phaito text-white font-semibold py-2 px-4 rounded-lg hover:bg-phaito-orange transition duration-300">
-        Login / Signup
-      </a>
-    </div>
-  </header>
-  <main class="bg-white p-8 rounded-lg shadow-md text-center mt-8">
-    <h1 class="text-2xl font-bold mb-4">Ouvrir / Open - PHAiTO</h1>
-    <p class="mb-6">Cliquez sur le bouton ci-dessous pour ouvrir
-      l'application.<br />Click the button below to open the application.</p>
-    <button onclick="window.location.href='phaito://orders'"
-      class="bg-phaito text-white font-semibold py-2 px-4 rounded-lg hover:bg-phaito-orange transition duration-300">
-      Ouvrir / Open PHAiTO
-    </button>
-
-    <div class="gap-4 flex justify-center mt-6">
-      <a href="https://client.phaito.com/download/mac" target="_blank"
-        class="text-xs font-medium text-phaito hover:text-phaito-orange hover:underline">Download Mac</a>
-      <button disabled class="text-xs font-medium text-gray-300 cursor-not-allowed">Download Window (coming soon)</a>
-
-    </div>
-
-  </main>
-</body>
-
+            <div class="gap-4 flex justify-center mt-6">
+                <a href="https://client.phaito.com/download/mac" target="_blank" class="text-xs font-medium text-phaito hover:text-phaito-orange hover:underline">Download Mac</a>
+                <a href="https://client.phaito.com/download/window" target="_blank" class="text-xs font-medium text-phaito hover:text-phaito-orange hover:underline"
+                    >Download Window</a
+                >
+            </div>
+        </main>
+    </body>
 </html>
